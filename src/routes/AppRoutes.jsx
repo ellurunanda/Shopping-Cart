@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
+import ProtectedRoute from '../routes/ProtectedRoute';
 import LoadingSpinner from '../components/LoadingSpinner/LoadingSpinner';
 
 // Lazy loaded components
