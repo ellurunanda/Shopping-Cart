@@ -48,6 +48,7 @@ const ProductCard = ({ product }) => {
           src={product.thumbnail || product.images?.[0]} 
           alt={product.title}
           className={styles.image}
+          onError={e => { e.target.src = 'https://placehold.co/300x300?text=No+Image'; }}
         />
         {discountPercentage > 0 && (
           <div className={styles.discount}>

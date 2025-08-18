@@ -10,6 +10,7 @@ import styles from './Cart.module.css';
 const Cart = () => {
   const dispatch = useDispatch();
   const { items, totalItems, totalPrice } = useSelector(state => state.cart);
+  const { user, isAuthenticated } = useSelector(state => state.auth);
 
   const handleClearCart = () => {
     if (window.confirm('Are you sure you want to clear your cart?')) {
@@ -18,7 +19,45 @@ const Cart = () => {
   };
 
   const handleCheckout = () => {
-    alert('Checkout functionality would be implemented here!\n\nThis is a demo application.');
+    // Only allow checkout if authenticated and user exists
+    if (!isAuthenticated || !user || !user._id) {
+      alert('You must be logged in to checkout.');
+      return;
+    }
+
+    const orderItems = items.map(item => ({
+      productId: item.productId?._id || item._id || item.id,
+      quantity: item.quantity,
+      price: item.price
+    }));
+
+    const orderData = {
+      userId: user._id,
+      items: orderItems,
+      totalAmount: finalTotal,
+      shippingAddress: 'Demo Address', // Replace with real address if available
+      paymentInfo: 'Demo Payment', // Replace with real payment info if available
+    };
+
+    fetch('http://localhost:5000/api/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(orderData),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          alert('Order failed: ' + data.error);
+        } else {
+          alert('Order placed successfully!');
+          dispatch(clearCart());
+        }
+      })
+      .catch(err => {
+        alert('Order failed: ' + err.message);
+      });
   };
 
   const shipping = totalPrice > 50 ? 0 : 8.99;

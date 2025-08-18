@@ -3,7 +3,7 @@ import { productsAPI } from '../services/api';
 
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
-  async ({ limit = 30, skip = 0 } = {}) => {
+  async ({ limit = 15, skip = 0 } = {}) => {
     const response = await productsAPI.getAll(limit, skip);
     return response.data;
   }

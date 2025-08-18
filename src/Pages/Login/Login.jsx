@@ -18,6 +18,13 @@ const Login = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
+      // Save userId to localStorage for checkout
+      const userId = (typeof window !== 'undefined' && window.store && window.store.getState)
+        ? window.store.getState().auth?.user?._id
+        : null;
+      if (userId) {
+        localStorage.setItem('userId', userId);
+      }
       navigate(ROUTES.PRODUCTS);
     }
   }, [isAuthenticated, navigate]);

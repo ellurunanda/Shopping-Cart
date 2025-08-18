@@ -123,7 +123,7 @@ const AddProduct = () => {
           depth: parseFloat(formData.dimensions.depth) || 5
         },
         images: images.map(img => img.url),
-        thumbnail: images[0]?.url || 'https://via.placeholder.com/300x300?text=Product'
+  thumbnail: images[0]?.url || 'https://placehold.co/300x300?text=Product'
       };
 
       await dispatch(addProduct(productData)).unwrap();

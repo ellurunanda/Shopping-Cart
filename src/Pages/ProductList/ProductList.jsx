@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Search, Filter, Loader, Package, X } from 'lucide-react';
+import { Search, Package, X } from 'lucide-react';
 import { useDebounce } from '../../hooks/useDebounce';
 import { 
   fetchProducts, 
@@ -28,8 +28,23 @@ const ProductList = () => {
 
   const [localSearchQuery, setLocalSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('default');
-  
   const debouncedSearchQuery = useDebounce(localSearchQuery, 300);
+
+  // ---- Normalize data shapes safely ----
+  const safeItems = React.useMemo(() => {
+    if (Array.isArray(items)) return items;
+    if (Array.isArray(items?.products)) return items.products;   // DummyJSON style
+    if (Array.isArray(items?.items)) return items.items;         // some APIs use items
+    return [];
+  }, [items]);
+
+  const safeCategories = React.useMemo(() => {
+    if (Array.isArray(categories)) return categories;
+    if (Array.isArray(categories?.categories)) return categories.categories; // DummyJSON style
+    return [];
+  }, [categories]);
+
+  const safeTotal = typeof total === 'number' ? total : safeItems.length;
 
   const handleClear = useCallback(() => {
     setLocalSearchQuery('');
@@ -76,23 +91,28 @@ const ProductList = () => {
     }
   };
 
+  // ---- Sorting with safe fallbacks ----
   const sortedItems = React.useMemo(() => {
-    const itemsCopy = [...items];
+    const itemsCopy = safeItems.slice();
+    const getTitle = (p) => (p?.title ?? p?.name ?? '').toString();
+    const getPrice = (p) => Number.isFinite(p?.price) ? p.price : Number(p?.price) || 0;
+    const getRating = (p) => Number.isFinite(p?.rating) ? p.rating : Number(p?.rating) || 0;
+
     switch (sortBy) {
       case 'price-low':
-        return itemsCopy.sort((a, b) => a.price - b.price);
+        return itemsCopy.sort((a, b) => getPrice(a) - getPrice(b));
       case 'price-high':
-        return itemsCopy.sort((a, b) => b.price - a.price);
+        return itemsCopy.sort((a, b) => getPrice(b) - getPrice(a));
       case 'rating':
-        return itemsCopy.sort((a, b) => b.rating - a.rating);
+        return itemsCopy.sort((a, b) => getRating(b) - getRating(a));
       case 'name':
-        return itemsCopy.sort((a, b) => a.title.localeCompare(b.title));
+        return itemsCopy.sort((a, b) => getTitle(a).localeCompare(getTitle(b)));
       default:
         return itemsCopy;
     }
-  }, [items, sortBy]);
+  }, [safeItems, sortBy]);
 
-  if (loading && items.length === 0) {
+  if (loading && safeItems.length === 0) {
     return (
       <div className={styles.container}>
         <LoadingSpinner message="Loading amazing products..." />
@@ -132,22 +152,24 @@ const ProductList = () => {
             </label>
             <select
               id="category"
-              value={selectedCategory}
+              value={selectedCategory || ''}
               onChange={(e) => handleCategoryChange(e.target.value)}
               className={styles.select}
             >
               <option value="">All Categories</option>
-              {categories.map(category => (
-                <option 
-                  key={typeof category === 'object' ? category.slug : category} 
-                  value={typeof category === 'object' ? category.slug : category}
-                >
-                  {typeof category === 'object' 
-                    ? category.name 
-                    : category.charAt(0).toUpperCase() + category.slice(1)
-                  }
-                </option>
-              ))}
+              {safeCategories.map((category, idx) => {
+                const val = typeof category === 'object'
+                  ? (category.slug ?? category.name ?? String(idx))
+                  : String(category);
+                const label = typeof category === 'object'
+                  ? (category.name ?? category.slug ?? `Category ${idx + 1}`)
+                  : (val.charAt(0).toUpperCase() + val.slice(1));
+                return (
+                  <option key={val} value={val}>
+                    {label}
+                  </option>
+                );
+              })}
             </select>
           </div>
         </div>
@@ -166,13 +188,13 @@ const ProductList = () => {
 
       {error && (
         <div className={styles.error}>
-          <strong>Error:</strong> {error}
+          <strong>Error:</strong> {String(error)}
         </div>
       )}
 
       <div className={styles.resultsInfo}>
         <div className={styles.resultCount}>
-          {total > 0 ? `Showing ${sortedItems.length} of ${total} products` : 'No products found'}
+          {safeTotal > 0 ? `Showing ${sortedItems.length} of ${safeTotal} products` : 'No products found'}
           {searchQuery && ` for "${searchQuery}"`}
           {selectedCategory && ` in "${selectedCategory}"`}
         </div>
@@ -192,8 +214,11 @@ const ProductList = () => {
 
       {sortedItems.length > 0 ? (
         <div className={styles.grid}>
-          {sortedItems.map(product => (
-            <ProductCard key={product.id} product={product} />
+          {sortedItems.map((product, index) => (
+            <ProductCard
+              key={product.id ?? product._id ?? product.sku ?? `${(product.title || product.name || 'item')}-${index}`}
+              product={product}
+            />
           ))}
         </div>
       ) : (
