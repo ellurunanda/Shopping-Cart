@@ -9,7 +9,7 @@ const Register = lazy(() => import('../pages/Register/Register'));
 const ProductList = lazy(() => import('../pages/ProductList/ProductList'));
 const ProductDetail = lazy(() => import('../pages/ProductDetail/ProductDetail'));
 const Cart = lazy(() => import('../pages/Cart/Cart'));
-const AddProduct = lazy(() => import('../pages/AddProduct/AddProduct'));
+const AddProduct = lazy(() => import('../Pages/AddProduct/AddProduct'));
 
 const AppRoutes = () => {
   return (
@@ -77,9 +77,9 @@ const AppRoutes = () => {
           } 
         />
 
-        {/* Redirects */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="*" element={<Navigate to="/products" replace />} />
+  {/* Redirects */}
+  <Route path="/" element={<Navigate to="/login" replace />} />
+  <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Suspense>
   );
